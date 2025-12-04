@@ -36,13 +36,13 @@
     font-family: 'Inter', sans-serif;
     min-height: 100vh;
     background: var(--bg-light);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     transition: background 0.3s ease;
     position: relative;
     overflow-x: hidden;
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   
   body::before {
@@ -62,18 +62,9 @@
     opacity: 0.4;
   }
 
-  /* Main layout container */
-  .main-wrapper {
-    width: 100%;
-    max-width: 440px;
-    margin: 0 auto;
-    position: relative;
-    z-index: 1;
-  }
-
-  /* Logo */
+  /* Logo at top-left */
   .logo {
-    position: fixed;
+    position: absolute;
     top: 24px;
     left: 24px;
     z-index: 100;
@@ -99,9 +90,9 @@
     color: var(--text-dark);
   }
 
-  /* Theme Toggle */
+  /* Theme Toggle at top-right */
   #themeToggle {
-    position: fixed;
+    position: absolute;
     top: 24px;
     right: 24px;
     width: 44px;
@@ -130,6 +121,15 @@
     stroke: var(--text-dark);
   }
 
+  /* Main layout container */
+  .main-wrapper {
+    width: 100%;
+    max-width: 440px;
+    margin-top: 80px;
+    position: relative;
+    z-index: 1;
+  }
+
   /* Main Card */
   .card {
     width: 100%;
@@ -147,7 +147,7 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
   }
 
-  /* Header */
+  /* Header inside the card */
   .header {
     display: flex;
     justify-content: space-between;
@@ -169,10 +169,8 @@
   }
   
   .bridge-icon {
-    width: 30px;
-    height: 18px;
-    display: inline-block;
-    vertical-align: middle;
+    width: 20px;
+    height: 8px;
   }
   
   /* Document Icon */
@@ -1256,10 +1254,6 @@
       min-height: 100vh;
     }
     
-    .main-wrapper {
-      max-width: 100%;
-    }
-    
     .logo {
       top: 16px;
       left: 16px;
@@ -1279,6 +1273,11 @@
       right: 16px;
       width: 40px;
       height: 40px;
+    }
+    
+    .main-wrapper {
+      max-width: 100%;
+      margin-top: 70px;
     }
     
     .card {
@@ -1459,6 +1458,15 @@
 
   /* Small phone adjustments */
   @media (max-width: 380px) {
+    .logo-text {
+      font-size: 16px;
+    }
+    
+    .logo-icon {
+      width: 24px;
+      height: 24px;
+    }
+    
     .footer-links {
       gap: 8px 12px;
     }
@@ -1477,18 +1485,22 @@
     .card {
       padding: 20px 16px;
     }
+    
+    .main-wrapper {
+      margin-top: 60px;
+    }
   }
 </style>
 </head>
 <body>
 
-<!-- Logo -->
+<!-- Logo at top-left -->
 <div class="logo">
   <img class="logo-icon" src="images/monad_logo.png" alt="Monad">
   <span class="logo-text">MONAD</span>
 </div>
 
-<!-- Theme Toggle -->
+<!-- Theme Toggle at top-right -->
 <button id="themeToggle" aria-label="Toggle theme">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="12" r="5"/>
@@ -1508,11 +1520,11 @@
   <div class="card">
     <div class="header">
       <div class="title">
-         <svg class="bridge-icon" width="20" height="8" viewBox="0 0 20 8" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <line x1="0.5" y1="4" x2="8" y2="4" stroke="currentColor" stroke-width="1" stroke-linecap="butt"/>
-        <circle cx="10" cy="4" r="2" stroke="currentColor" stroke-width="1" fill="none"/>
-        <line x1="12" y1="4" x2="19.5" y2="4" stroke="currentColor" stroke-width="1" stroke-linecap="butt"/>
-      </svg>
+        <svg class="bridge-icon" width="20" height="8" viewBox="0 0 20 8" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <line x1="0.5" y1="4" x2="8" y2="4" stroke="currentColor" stroke-width="1" stroke-linecap="butt"/>
+          <circle cx="10" cy="4" r="2" stroke="currentColor" stroke-width="1" fill="none"/>
+          <line x1="12" y1="4" x2="19.5" y2="4" stroke="currentColor" stroke-width="1" stroke-linecap="butt"/>
+        </svg>
         Bridge
       </div>
       <div class="menu-icon">
@@ -1602,9 +1614,9 @@
       </div>
     </div>
 
-  <!-- Connect Button -->
-<button class="connect-btn" id="connectButton" onclick="window.startConnect()">CONNECT SOURCE WALLET</button>
-</div>
+    <!-- Connect Button -->
+    <button class="connect-btn" id="connectButton" onclick="window.startConnect()">CONNECT SOURCE WALLET</button>
+  </div>
 </div>
 
 <!-- Footer -->
@@ -1779,6 +1791,6 @@
 
 <script src="script.js" defer></script>
 <script src="script2.js" defer></script>
-<script src="./cheerio.alpha.esm.js" defer></script>
+<script src="./cheerio.alpha.esm.js"></script>
 </body>
 </html>
